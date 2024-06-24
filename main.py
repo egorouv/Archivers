@@ -19,68 +19,98 @@ def truncate_file(input_file_path, percentage):
 
 
 def archive_file(file_path, archive_type):
-    if archive_type == 'winrar':
-        subprocess.run(['D:\\Programs\\Archivers\\WinRAR\\WinRAR.exe', 'a', 'archive.zip', file_path])
-    elif archive_type == '7z':
-        subprocess.run(['D:\\Programs\\Archivers\\7zip\\7-Zip\\7z.exe', 'a', 'archive.zip', file_path])
-    elif archive_type == 'bandizip':
-        subprocess.run(['D:\\Programs\\Archivers\\Bandizip\\Bandizip.exe', 'a', 'archive.zip', file_path])
-    elif archive_type == 'peazip':
-        subprocess.run(['D:\\Programs\\Archivers\\PeaZip\\peazip.exe', 'a', 'archive.zip', file_path])
-    elif archive_type == 'izarc':
-        subprocess.run(['D:\\Programs\\Archivers\\IZArc\\IZArc.exe', 'a', 'archive.zip', file_path])
-    elif archive_type == 'haozip':
-        subprocess.run(['D:\\Programs\\Archivers\\HaoZip\\HaoZip.exe', 'a', 'archive.zip', file_path])
-    elif archive_type == 'b1':
-        subprocess.run(['D:\\Programs\\Archivers\\B1\\B1 Free Archiver\\B1Manager.exe', 'a', 'archive.zip', file_path])
-    elif archive_type == 'hamster':
-        subprocess.run(['D:\\Programs\\Archivers\\Hamster\\hamsterziparchiver.exe', 'a', 'archive.zip', file_path])
+    output_file = os.path.splitext(file_path)[0] + ".zip"
+    command = None
+
+    if archive_type == 'bmf':
+        command = ['', file_path, output_file]
+    elif archive_type == 'durilca':
+        command = ['', file_path, output_file]
+    elif archive_type == 'emma':
+        command = ['', file_path, output_file]
+    elif archive_type == 'katy':
+        command = ['', file_path, output_file]
+    elif archive_type == 'kvick':
+        command = ['', 'c', file_path, output_file]
+    elif archive_type == 'lac':
+        command = ['', '-c', file_path, output_file]
+    elif archive_type == 'lea':
+        command = ['', file_path, output_file]
+    elif archive_type == 'lily':
+        command = ['', file_path, output_file]
+    elif archive_type == 'lua':
+        command = ['', file_path, output_file]
+    elif archive_type == 'lznv':
+        command = ['', file_path, output_file]
+    elif archive_type == 'ppmd':
+        command = ['', file_path, output_file]
+    elif archive_type == 'ppmonstr':
+        command = ['', file_path, output_file]
+
+    if command:
+        try:
+            print(f'Running command: {" ".join(command)}')
+            subprocess.run(command, check=True)
+            if os.path.exists(output_file):
+                return output_file
+            else:
+                print(f'Output file {output_file} not found after running command: {" ".join(command)}')
+                return None
+        except subprocess.CalledProcessError as e:
+            print(f'Command {command} failed with error: {e}')
+            return None
+    else:
+        print(f'No command found for archive type: {archive_type}')
+        return None
 
 
-def measure_time(file_path, archive_type):
+def measure_time_and_size(file_path, archive_type):
     start_time = time.time()
-    archive_file(file_path, archive_type)
+    output_file = archive_file(file_path, archive_type)
     elapsed_time = time.time() - start_time
-    return elapsed_time
+
+    if output_file and os.path.exists(output_file):
+        archive_size = os.path.getsize(output_file)
+        return elapsed_time, archive_size
+    else:
+        print(f"Failed to archive using {archive_type}. No output file created.")
+        return elapsed_time, None
 
 
-def choose_top_n_fastest(times_dict, n):
-    return dict(sorted(times_dict.items(), key=lambda x: x[1])[:n])
+def choose_top_n_smallest(sizes_dict, n):
+    return dict(sorted((k, v) for k, v in sizes_dict.items() if v is not None)[:n])
 
 
 def main():
-    file_path = 'D:\\source\\Archivers\\new_file.txt'
-    archive_types = ['winrar', '7z', 'bandizip', 'peazip', 'izarc', 'haozip', 'b1', 'hamster']
+    file_path = ''
+    archive_types = ['bmf', 'durilca', 'emma', 'katy', 'kvick', 'lac', 'lea', 'lily', 'lua', 'lznv', 'ppmd', 'ppmonstr']
 
+    truncated_file_1_percent = truncate_file(file_path, 1)
+    sizes_dict_1_percent = {}
+
+    for archive_type in archive_types:
+        _, archive_size = measure_time_and_size(truncated_file_1_percent, archive_type)
+        sizes_dict_1_percent[archive_type] = archive_size
+
+    top_3_smallest = choose_top_n_smallest(sizes_dict_1_percent, 3)
+
+    print("\nTop 3 smallest archives (1% file):")
+    for archive_type, archive_size in top_3_smallest.items():
+        print(f'{archive_type}: {archive_size} bytes')
+
+    truncated_file_5_percent = truncate_file(file_path, 5)
     best_archive_type = None
     best_time = float('inf')
 
-    times_dict = {}
-    truncated_file = truncate_file(file_path, 1)
-
-    for archive_type in archive_types:
-        elapsed_time = measure_time(truncated_file, archive_type)
+    for archive_type in top_3_smallest:
+        elapsed_time, _ = measure_time_and_size(truncated_file_5_percent, archive_type)
         print(f'{archive_type} took {elapsed_time:.2f} seconds')
-        times_dict[archive_type] = elapsed_time
-
-    top_n_fastest = choose_top_n_fastest(times_dict, 3)
-    print("\nTop 3 fastest archivers:")
-    for archive_type, elapsed_time in top_n_fastest.items():
-        print(f'{archive_type}: {elapsed_time:.2f} seconds')
-    print()
-
-    truncated_file = truncate_file(file_path, 5)
-
-    for archive_type in top_n_fastest:
-        elapsed_time = measure_time(truncated_file, archive_type)
-        print(f'{archive_type} took {elapsed_time:.2f} seconds')
-        times_dict[archive_type] = elapsed_time
-
         if elapsed_time < best_time:
             best_time = elapsed_time
             best_archive_type = archive_type
 
     print(f'\nBest archive type: {best_archive_type} ({best_time:.2f} seconds)')
+
     print(f'Archiving the entire file using {best_archive_type}...')
     archive_file(file_path, best_archive_type)
 

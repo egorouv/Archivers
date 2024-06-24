@@ -1,7 +1,7 @@
 import os
 
 
-def replicate_file(file_path, num_replications=1000):
+def replicate_file(file_path, num_replications=500):
     with open(input_file_path, 'rb') as input_file:
         content = input_file.read()
 
@@ -16,7 +16,7 @@ def replicate_file(file_path, num_replications=1000):
 
 
 if __name__ == "__main__":
-    input_file_path = 'D:\\source\\Archivers\\file.txt'
+    input_file_path = ''
 
     new_file_path = replicate_file(input_file_path)
     print(f'Новый файл создан: {new_file_path}')
